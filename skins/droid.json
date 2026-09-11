@@ -1,0 +1,49 @@
+{
+  "name": "Droid",
+  "version": 1,
+  "canvas": {
+    "width": 560,
+    "height": 180
+  },
+  "colors": {
+    "primary": "#66ff88",
+    "secondary": "#00d9ff",
+    "accent": "#ffe66b",
+    "body": "#07130d",
+    "body_alpha": 0.92,
+    "panel": "#0c2015",
+    "panel_alpha": 0.72,
+    "text": "#e8fff0",
+    "muted": "#77a68a"
+  },
+  "geometry": {
+    "art": [
+      40,
+      48,
+      82
+    ],
+    "text": [
+      145,
+      66
+    ],
+    "controls": [
+      [
+        365,
+        132
+      ],
+      [
+        423,
+        132
+      ],
+      [
+        481,
+        132
+      ]
+    ],
+    "status": [
+      484,
+      56
+    ],
+    "shape": "droid"
+  }
+}

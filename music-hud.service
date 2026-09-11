@@ -1,0 +1,14 @@
+k[Unit]
+Description=Cyberpunk MPD Music HUD
+After=graphical-session.target
+PartOf=graphical-session.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 %h/.local/bin/music-hud.py
+Restart=on-failure
+RestartSec=2
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=default.target

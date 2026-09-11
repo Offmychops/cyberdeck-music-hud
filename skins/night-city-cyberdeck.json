@@ -1,0 +1,10 @@
+{
+  "name": "Night City CyberDeck Image",
+  "version": 4,
+  "canvas": {
+    "width": 1100,
+    "height": 322
+  },
+  "skin_png": "night-city-cyberdeck.png",
+  "description": "Full-colour generated CyberDeck image skin with live MPD/CAVA overlays."
+}

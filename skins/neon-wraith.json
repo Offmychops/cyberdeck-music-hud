@@ -1,0 +1,49 @@
+{
+  "name": "Neon Wraith",
+  "version": 2,
+  "canvas": {
+    "width": 650,
+    "height": 200
+  },
+  "colors": {
+    "primary": "#00f6ff",
+    "secondary": "#ff00d9",
+    "accent": "#b5ff39",
+    "body": "#02070d",
+    "body_alpha": 0.92,
+    "panel": "#071624",
+    "panel_alpha": 0.74,
+    "text": "#eaffff",
+    "muted": "#6f9bab"
+  },
+  "geometry": {
+    "art": [
+      42,
+      54,
+      94
+    ],
+    "text": [
+      165,
+      74
+    ],
+    "controls": [
+      [
+        430,
+        148
+      ],
+      [
+        495,
+        148
+      ],
+      [
+        560,
+        148
+      ]
+    ],
+    "status": [
+      560,
+      60
+    ],
+    "shape": "wraith"
+  }
+}

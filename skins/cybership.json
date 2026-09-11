@@ -1,0 +1,49 @@
+{
+  "name": "CyberShip",
+  "version": 1,
+  "canvas": {
+    "width": 620,
+    "height": 190
+  },
+  "colors": {
+    "primary": "#00f6ff",
+    "secondary": "#ff00e6",
+    "accent": "#8dff00",
+    "body": "#030912",
+    "body_alpha": 0.9,
+    "panel": "#081423",
+    "panel_alpha": 0.68,
+    "text": "#d8ffff",
+    "muted": "#7698a8"
+  },
+  "geometry": {
+    "art": [
+      42,
+      51,
+      88
+    ],
+    "text": [
+      155,
+      69
+    ],
+    "controls": [
+      [
+        405,
+        137
+      ],
+      [
+        466,
+        137
+      ],
+      [
+        527,
+        137
+      ]
+    ],
+    "status": [
+      531,
+      63
+    ],
+    "shape": "spaceship"
+  }
+}
