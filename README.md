@@ -81,6 +81,37 @@ Enable the HUD:
 
 ## Configuration
 
+### Music directory
+
+By default, the HUD looks for music in:
+
+    ~/Music
+
+You can override this with the `MUSIC_HUD_MUSIC_DIR` environment variable:
+
+    export MUSIC_HUD_MUSIC_DIR="$HOME/Music"
+
+For example:
+
+    export MUSIC_HUD_MUSIC_DIR="/mnt/storage/Music"
+
+For a persistent setting, add the variable to your shell environment before starting the HUD.
+
+### Skins
+
+Skins are stored as JSON files in:
+
+    ~/.config/music-hud/skins/
+
+The active skin is selected using:
+
+    ~/.config/music-hud/active-skin
+
+Each skin can specify its own artwork using the `skin_png` field. The corresponding PNG should be stored alongside the skin JSON in:
+
+    ~/.config/music-hud/skins/
+
+
 Skins are stored as JSON files in:
 
     ~/.config/music-hud/skins/
