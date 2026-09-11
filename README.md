@@ -34,6 +34,14 @@ Designed for Linux desktops, with Omarchy/Arch Linux as the primary environment.
 
 The included `night-city-cyberdeck` skin provides the default CyberDeck appearance.
 
+### Main HUD
+
+![CyberDeck Music HUD](assets/screenshot-main.png)
+
+### Music Playing
+
+![CyberDeck Music HUD - Playing](assets/screenshot-playing.png)
+
 ## Requirements
 
 - Linux
