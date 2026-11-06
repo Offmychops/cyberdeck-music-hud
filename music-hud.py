@@ -8,7 +8,7 @@ import gi
 gi.require_version("Gtk", "4.0")
 gi.require_version("Gtk4LayerShell", "1.0")
 
-from gi.repository import Gtk, GLib, Gtk4LayerShell as LayerShell
+from gi.repository import Gtk, GLib, GdkPixbuf, Gtk4LayerShell as LayerShell
 
 import cairo
 import math
@@ -301,6 +301,56 @@ class MusicHUD(Gtk.DrawingArea):
         self.playing = False
 
         self.art_surface = None
+
+        # Load the CyberDeck skin once and reuse it.
+        skin_filename = self.skin.get("skin_png", "")
+        skin_path = os.path.join(SKIN_DIR, skin_filename)
+
+        try:
+            pixbuf = GdkPixbuf.Pixbuf.new_from_file(skin_path)
+
+            width = pixbuf.get_width()
+            height = pixbuf.get_height()
+            stride = pixbuf.get_rowstride()
+            channels = pixbuf.get_n_channels()
+
+            data = pixbuf.get_pixels()
+
+            if channels == 4:
+                fmt = cairo.FORMAT_ARGB32
+                surface_data = bytearray(width * height * 4)
+
+                for y in range(height):
+                    src = y * stride
+                    dst = y * width * 4
+                    for x in range(width):
+                        r = data[src + x * 4]
+                        g = data[src + x * 4 + 1]
+                        b = data[src + x * 4 + 2]
+                        a = data[src + x * 4 + 3]
+
+                        surface_data[dst + x * 4] = b
+                        surface_data[dst + x * 4 + 1] = g
+                        surface_data[dst + x * 4 + 2] = r
+                        surface_data[dst + x * 4 + 3] = a
+
+                self.skin_surface = cairo.ImageSurface.create_for_data(
+                    surface_data,
+                    fmt,
+                    width,
+                    height,
+                    width * 4
+                )
+                self._skin_data = surface_data
+            else:
+                self.skin_surface = None
+
+            print(f"MUSIC HUD: skin loaded: {skin_path}", flush=True)
+
+        except Exception as exc:
+            self.skin_surface = None
+            print(f"MUSIC HUD: skin load failed: {exc}", flush=True)
+
         self.last_track = ""
 
         self.set_draw_func(self.draw)
@@ -506,37 +556,26 @@ class MusicHUD(Gtk.DrawingArea):
 
     def load_artwork(self, filename):
 
-        full_path = os.path.join(
-            MUSIC_DIR,
-            filename
-        )
+        full_path = os.path.join(MUSIC_DIR, filename)
 
         if not os.path.exists(full_path):
             print(f"MUSIC HUD: artwork source not found: {full_path}", flush=True)
             return
 
-        key = hashlib.md5(
-            filename.encode()
-        ).hexdigest()
+        album_dir = os.path.dirname(full_path)
 
-        output = os.path.join(
-            CACHE_DIR,
-            key + ".png"
-        )
+        key = hashlib.md5(filename.encode()).hexdigest()
+        output = os.path.join(CACHE_DIR, key + ".png")
 
         def valid_png(path):
             try:
                 if not os.path.exists(path):
                     return False
-
-                # Cairo needs a real PNG it can decode.
                 surface = cairo.ImageSurface.create_from_png(path)
                 return surface.get_width() > 0 and surface.get_height() > 0
-
             except Exception:
                 return False
 
-        # The earlier prototype could leave behind an unusable cache file.
         if not valid_png(output):
 
             try:
@@ -544,23 +583,59 @@ class MusicHUD(Gtk.DrawingArea):
             except FileNotFoundError:
                 pass
 
-            try:
+            # Check for external album artwork first.
+            artwork = None
+
+            preferred = [
+                "Folder.jpg",
+                "Folder.png",
+                "cover.jpg",
+                "cover.png",
+                "front.jpg",
+                "front.png",
+            ]
+
+            for name in preferred:
+                candidate = os.path.join(album_dir, name)
+                if os.path.isfile(candidate):
+                    artwork = candidate
+                    break
+
+            # Handle common Windows Media Player artwork names.
+            if artwork is None:
+                for pattern in ("AlbumArt*.jpg", "AlbumArt*.png"):
+                    matches = sorted(Path(album_dir).glob(pattern))
+                    if matches:
+                        artwork = str(matches[0])
+                        break
+
+            if artwork:
+                print(f"MUSIC HUD: using external artwork: {artwork}", flush=True)
+
                 result = subprocess.run(
                     [
-                        "ffmpeg",
-                        "-y",
-                        "-loglevel",
-                        "error",
-                        "-i",
-                        full_path,
-                        "-map",
-                        "0:v:0",
-                        "-frames:v",
-                        "1",
-                        "-f",
-                        "image2",
-                        "-update",
-                        "1",
+                        "ffmpeg", "-y", "-loglevel", "error",
+                        "-i", artwork,
+                        "-frames:v", "1",
+                        output
+                    ],
+                    capture_output=True,
+                    text=True,
+                    timeout=20
+                )
+
+                if result.returncode != 0:
+                    print(f"MUSIC HUD: external artwork conversion failed: {result.stderr.strip()}", flush=True)
+                    return
+
+            else:
+                # Fall back to embedded artwork.
+                result = subprocess.run(
+                    [
+                        "ffmpeg", "-y", "-loglevel", "error",
+                        "-i", full_path,
+                        "-map", "0:v:0?",
+                        "-frames:v", "1",
                         output
                     ],
                     capture_output=True,
@@ -570,51 +645,29 @@ class MusicHUD(Gtk.DrawingArea):
 
                 if result.returncode != 0:
                     print(
-                        "MUSIC HUD: ffmpeg artwork extraction failed:",
-                        result.stderr.strip() or f"exit {result.returncode}",
+                        f"MUSIC HUD: no embedded artwork available for {filename}",
                         flush=True
                     )
                     return
 
-            except Exception as exc:
-                print(
-                    f"MUSIC HUD: artwork extraction exception: {exc}",
-                    flush=True
-                )
-                return
-
         if not valid_png(output):
-            print(
-                f"MUSIC HUD: no usable embedded artwork for {filename}",
-                flush=True
-            )
+            print(f"MUSIC HUD: no usable artwork for {filename}", flush=True)
             return
 
         try:
-
             surface = cairo.ImageSurface.create_from_png(output)
 
             def update():
-
                 if filename == self.file:
-
                     self.art_surface = surface
-                    print(
-                        f"MUSIC HUD: artwork loaded: {filename}",
-                        flush=True
-                    )
+                    print(f"MUSIC HUD: artwork loaded: {filename}", flush=True)
                     self.queue_draw()
-
                 return False
 
             GLib.idle_add(update)
 
         except Exception as exc:
-            print(
-                f"MUSIC HUD: cairo artwork load failed: {exc}",
-                flush=True
-            )
-
+            print(f"MUSIC HUD: cairo artwork load failed: {exc}", flush=True)
 
     # =====================================================
     # BUTTONS
@@ -757,17 +810,12 @@ class MusicHUD(Gtk.DrawingArea):
 
         cr.restore()
 
-        try:
-            surface = cairo.ImageSurface.create_from_png(skin_path)
+        if self.skin_surface is not None:
             cr.save()
             cr.translate(xoff, bob)
-            cr.set_source_surface(surface, 0, 0)
+            cr.set_source_surface(self.skin_surface, 0, 0)
             cr.paint()
             cr.restore()
-        except Exception as exc:
-            print(f"MUSIC HUD: skin render failed: {exc}", flush=True)
-            cr.restore()
-            return True
 
         ox = xoff
         oy = bob
@@ -1007,16 +1055,13 @@ class App(Gtk.Application):
         self.hud = None
         self.pending_toggle = False
 
-        # Keep GTK alive while hidden
-        self.hold()
-
-        # Create the HUD once GTK's main loop is running.
-        # This avoids relying on Gtk.Application activation.
-        GLib.idle_add(self.create_hud)
 
         # Start the HUD CAVA instance.
         self.cava_process = None
         self.start_cava()
+
+    def do_activate(self):
+        GLib.idle_add(self.create_hud)
 
         # Start control socket immediately
         threading.Thread(
